@@ -30,7 +30,6 @@ let last_code: string;
  * Used to record and undo pygame-related settings
  */
 let pygameRunning = false;
-
 /**
  * Represents whether there's an open 'ask' prompt
  */
@@ -190,7 +189,6 @@ export function initializeCodePage(options: InitializeCodePageOptions) {
     theGlobalEditor = editorCreator.initializeEditorWithGutter($editor, EditorType.MAIN, dir);
     attachMainEditorEvents(theGlobalEditor);
     error.setEditor(theGlobalEditor);
-    window.Range = ace.require('ace/range').Range // get reference to ace/range
   }
   
   const anchor = window.location.hash.substring(1);
@@ -333,7 +331,6 @@ export function initializeViewProgramPage(options: InitializeViewProgramPageOpti
   theGlobalEditor = editorCreator.initializeEditorWithGutter($('#editor'), EditorType.MAIN, dir);
   attachMainEditorEvents(theGlobalEditor);
   error.setEditor(theGlobalEditor);
-  window.Range = ace.require('ace/range').Range // get reference to ace/range
 }
 
 export function initializeHighlightedCodeBlocks(where: Element) {
@@ -1381,6 +1378,7 @@ function get_parsons_code() {
 }
 
 export function get_active_and_trimmed_code() {
+  theGlobalEditor.trimTrailingSpace()
   return returnLinesWithoutBreakpoints(theGlobalEditor);
 }
 

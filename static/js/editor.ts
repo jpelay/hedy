@@ -92,4 +92,8 @@ export interface HedyEditor {
   on(key: OnEditorEventParameters[0], handler: OnEditorEventParameters[1]): void;
   // Very sneaky need to change this
   markers: Markers | undefined;
+  /**
+  * Trim trailing whitespaces
+  */
+  trimTrailingSpace: () => void;
 }
