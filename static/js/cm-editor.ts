@@ -2,7 +2,7 @@ import { HedyEditor, EditorType, Breakpoints, HedyEditorCreator } from "./editor
 import { Markers } from "./markers";
 import { basicSetup } from 'codemirror';
 import { EditorView } from '@codemirror/view'
-import { EditorState } from '@codemirror/state'
+import { EditorState, Compartment } from '@codemirror/state'
 import { oneDark } from '@codemirror/theme-one-dark';
 
 export class HedyCodeMirrorEditorCreator implements HedyEditorCreator {
@@ -43,21 +43,43 @@ export class HedyCodeMirrorEditorCreator implements HedyEditorCreator {
 
 export class HedyCodeMirrorEditor implements HedyEditor {
     markers: Markers | undefined;
+    private view: EditorView;
+    private readMode = new Compartment // Configuration for the editor read mode
     constructor(element: HTMLElement, isReadOnly: boolean, editorType: EditorType, dir: string = "ltr") {
         console.log(element, isReadOnly, editorType, dir);
+
+        const mainEditorStyling = EditorView.theme({
+            "&": {
+                height: "352px", 
+                background: '#272822', 
+                fontSize: '15.2px', 
+                color: 'white',
+                borderRadius: '4px'
+            },
+            
+            ".cm-scroller": {
+                overflow: "auto"
+            },
+
+            ".cm-gutters": {
+                borderRadius: '4px'
+            },
+        });
+        
         const state = EditorState.create({
             doc: '',
             extensions: [
                 basicSetup,
-                oneDark
+                oneDark,
+                mainEditorStyling,
+                this.readMode.of(EditorState.readOnly.of(isReadOnly)),
             ]
         });
-        const view = new EditorView({
+
+        this.view = new EditorView({
             parent: element,
             state: state
         });
-
-        console.log(view);
     }
 
     /**
@@ -72,7 +94,7 @@ export class HedyCodeMirrorEditor implements HedyEditor {
     * @returns the string of the current program in the editor
     */
     public get contents(): string {
-        return '';
+        return this.view.state.doc.toString();
     }
 
     /**
@@ -80,23 +102,24 @@ export class HedyCodeMirrorEditor implements HedyEditor {
      * @param content the content that wants to be set in the editor
      */
     public set contents(content: string) {
-        // pass
-        console.log(content);
+        let transaction = this.view.state.update({ changes: { from: 0, to: this.view.state.doc.length, insert: content } });
+        this.view.dispatch(transaction);
     }
 
     /**     
      * @returns if the editor is set to read-only mode
      */
     public get isReadOnly(): boolean {
-        return false;
+        return this.view.state.readOnly;
     }
 
     /**
      * Sets the read mode of the editor
      */
     public set isReadOnly(isReadMode: boolean) {
-        // pass
-        console.log(isReadMode)
+        this.view.dispatch({
+            effects: this.readMode.reconfigure(EditorState.readOnly.of(isReadMode))
+        });
     }
 
     /**
@@ -167,4 +190,7 @@ export class HedyCodeMirrorEditor implements HedyEditor {
         console.log(key, handler)
     }
 
+    public trimTrailingSpace() {
+        // pass
+    }
 }
