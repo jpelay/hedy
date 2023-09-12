@@ -44,11 +44,14 @@ export class HedyCodeMirrorEditorCreator implements HedyEditorCreator {
 export class HedyCodeMirrorEditor implements HedyEditor {
     markers: Markers | undefined;
     private view: EditorView;
-    private readMode = new Compartment // Configuration for the editor read mode
+    private readMode = new Compartment; // Configuration for the editor read mode
+    private theme = new Compartment;
+    private themeStyles: Record<string, any>;
+    
     constructor(element: HTMLElement, isReadOnly: boolean, editorType: EditorType, dir: string = "ltr") {
         console.log(element, isReadOnly, editorType, dir);
-
-        const mainEditorStyling = EditorView.theme({
+        
+        this.themeStyles = {
             "&": {
                 height: "352px", 
                 background: '#272822', 
@@ -64,14 +67,16 @@ export class HedyCodeMirrorEditor implements HedyEditor {
             ".cm-gutters": {
                 borderRadius: '4px'
             },
-        });
+        }
+        
+        const mainEditorStyling = EditorView.theme(this.themeStyles);
         
         const state = EditorState.create({
             doc: '',
             extensions: [
                 basicSetup,
                 oneDark,
-                mainEditorStyling,
+                this.theme.of(mainEditorStyling),
                 this.readMode.of(EditorState.readOnly.of(isReadOnly)),
             ]
         });
@@ -126,7 +131,17 @@ export class HedyCodeMirrorEditor implements HedyEditor {
      * Resizes the editor after changing its size programatically
      */
     resize(): void {
-        // pass
+        // TODO: this is still not working
+        const editorHeight = $('#editor').height()!;
+        const alertBoxHeight = $('#errorbox').height()!;
+        const height = editorHeight - alertBoxHeight;
+        console.log(`Editor original height ${editorHeight}`);
+        console.log(`Editor internal height ${this.view.dom.clientHeight}`);        
+        console.log('Editor resulting height' + height);
+        this.themeStyles['&'].height = `${height}px`;
+               this.view.dispatch({
+                effects: this.theme.reconfigure(EditorView.theme(this.themeStyles))
+        });       
     }
 
     /**
@@ -192,5 +207,18 @@ export class HedyCodeMirrorEditor implements HedyEditor {
 
     public trimTrailingSpace() {
         // pass
+    }
+
+    public switchProgrammersMode(isProgrammersMode: boolean) {                
+        if (isProgrammersMode) {
+            // Switch to programmers mode            
+            this.themeStyles['&'].height = "576px";
+        } else {
+            // Switch back to normal mode            
+            this.themeStyles['&'].height = "352px";
+        }    
+        this.view.dispatch({
+            effects: this.theme.reconfigure(EditorView.theme(this.themeStyles))
+        });
     }
 }
